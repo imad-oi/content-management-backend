@@ -20,6 +20,7 @@
   "dependencies": {
     "crypto": "^1.0.1",
     "mongoose": "^8.5.2",
+    "puppeteer": "^22.15.0",
     "uuid": "^10.0.0"
   }
 }
