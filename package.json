@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/imad-oi/content-management-backend#readme",
   "dependencies": {
+    "crypto": "^1.0.1",
     "mongoose": "^8.5.2",
     "uuid": "^10.0.0"
   }
