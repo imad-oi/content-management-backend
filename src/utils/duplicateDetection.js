@@ -5,7 +5,7 @@ const hashParagraph = (paragraph) => {
 };
 
 const detectDuplicates = (text) => {
-  const paragraphs = text.split('\n\n');
+  const paragraphs = text.split('\n\n'); 
   const hashes = new Set();
   const duplicates = [];
 
