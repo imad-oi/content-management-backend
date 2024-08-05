@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -19,8 +20,11 @@
   "homepage": "https://github.com/imad-oi/content-management-backend#readme",
   "dependencies": {
     "crypto": "^1.0.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
     "fastest-levenshtein": "^1.0.16",
     "mongoose": "^8.5.2",
+    "nodemon": "^3.1.4",
     "puppeteer": "^22.15.0",
     "uuid": "^10.0.0"
   }
