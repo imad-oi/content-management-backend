@@ -1,5 +1,7 @@
 // Import required modules
 const express = require('express');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./config/swagger');
 const connectDB = require('./config/database');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -35,6 +37,10 @@ connectDB();
 
 // Parse JSON bodies (limit to 10kb)
 app.use(express.json({ limit: '10kb' }));
+
+// Swagger documentation route
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+
 
 // Use authentication routes (unprotected)
 app.use('/auth', authRoutes)
