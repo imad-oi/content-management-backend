@@ -1,6 +1,18 @@
 const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 
+const DuplicateSchema = new mongoose.Schema({
+  sourceUuid: String,
+  sourceParagraphIndex: Number,
+  paragraph: String,
+  newTextIndex: Number,
+  type: {
+    type: String,
+    enum: ['exact', 'similar']
+  }
+}, { _id: false });
+
+
 const TextEntrySchema = new mongoose.Schema({
   uuid: {
     type: String,
@@ -10,6 +22,10 @@ const TextEntrySchema = new mongoose.Schema({
   content: {
     type: String,
     required: true,
+  },
+  duplicates: {
+    internal: [DuplicateSchema],
+    external: [DuplicateSchema]
   },
   createdAt: {
     type: Date,
