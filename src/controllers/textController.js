@@ -31,13 +31,24 @@ exports.submitText = async (req, res) => {
 
 exports.getTextByUuid = async (req, res) => {
   try {
-    const textEntry = await TextEntry.findOne({ uuid: req.params.uuid });
+    const { uuid } = req.params;
+    const userId = req.user.id;
+
+    const textEntry = await TextEntry.findOne({ uuid, user: userId });
+
     if (!textEntry) {
       return res.status(404).json({ error: 'Text entry not found' });
     }
-    res.json(textEntry);
+
+    res.json({
+      uuid: textEntry.uuid,
+      content: textEntry.content,
+      createdAt: textEntry.createdAt,
+      duplicates: textEntry.duplicates
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error retrieving text entry:', error);
+    res.status(500).json({ error: 'An error occurred while retrieving the text entry' });
   }
 };
 
