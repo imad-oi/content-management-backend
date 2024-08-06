@@ -51,18 +51,28 @@ const TextEntry = require('../models/TextEntry');
 const { hashParagraph, detectDuplicatesInText, detectSimilarSections } = require('../utils/duplicateDetection');
 
 class DuplicateDetectionService {
-    async detectDuplicatesAcrossEntries(newText) {
+    /**
+     * Detects duplicates in new text against existing entries
+     * @param {string} newText - The new text to check for duplicates
+     * @param {string} userId - The ID of the user submitting the text
+     * @returns {Object} Object containing internal and external duplicates
+     */
+    async detectDuplicatesAcrossEntries(newText, userId) {
+        // Detect internal duplicates within the new text
         const { hashes: newHashes, duplicates: internalDuplicates } = detectDuplicatesInText(newText);
         const externalDuplicates = [];
 
-        // Get all existing text entries
-        const existingEntries = await TextEntry.find({}, 'uuid content');
+        // Fetch all existing text entries for the user
+        const existingEntries = await TextEntry.find({ user: userId });
 
+        // Split the new text into paragraphs
         const newParagraphs = this.splitIntoParagraphs(newText);
 
+        // Compare new text with each existing entry
         for (const entry of existingEntries) {
             const existingParagraphs = this.splitIntoParagraphs(entry.content);
 
+            // Check for exact matches
             existingParagraphs.forEach((paragraph, index) => {
                 const hash = hashParagraph(paragraph);
                 if (newHashes.has(hash)) {
@@ -80,6 +90,7 @@ class DuplicateDetectionService {
             for (let i = 0; i < existingParagraphs.length; i++) {
                 for (let j = 0; j < newParagraphs.length; j++) {
                     if (detectSimilarSections(existingParagraphs[i], newParagraphs[j])) {
+                        // Avoid duplicate entries if an exact match was already found
                         if (!externalDuplicates.some(d => d.sourceParagraphIndex === i && d.newTextIndex === j)) {
                             externalDuplicates.push({
                                 sourceUuid: entry.uuid,
@@ -97,17 +108,28 @@ class DuplicateDetectionService {
         return { internalDuplicates, externalDuplicates };
     }
 
+    /**
+     * Updates duplicate flags in the database for a text entry
+     * @param {string} textEntryId - The ID of the text entry to update
+     * @param {Object} duplicates - The duplicate information to store
+     */
     async updateDuplicateFlags(textEntryId, duplicates) {
         await TextEntry.findByIdAndUpdate(textEntryId, { $set: { duplicates } });
     }
 
+    /**
+     * Splits text into paragraphs or sentences for analysis
+     * @param {string} text - The text to split
+     * @returns {string[]} An array of paragraphs or sentences
+     */
     splitIntoParagraphs(text) {
         // First, split by newlines
         let paragraphs = text.split(/\n+/);
 
         // Then, for each paragraph, split by periods if it's a long paragraph
         paragraphs = paragraphs.flatMap(para => {
-            if (para.length > 100) {
+            if (para.length > 100) {  // Only split long paragraphs
+                // Split by period followed by a space, trim each sentence, and remove empty ones
                 return para.split(/\.(?=\s)/).map(sentence => sentence.trim()).filter(Boolean);
             }
             return para;
@@ -116,6 +138,11 @@ class DuplicateDetectionService {
         return paragraphs;
     }
 
+    /**
+     * Compares crawled content against stored text entries
+     * @param {Object[]} crawledContents - Array of objects containing crawled content
+     * @returns {Object[]} Array of objects with duplicate information for each crawled content
+     */
     async compareCrawledContent(crawledContents) {
         const results = [];
 
@@ -124,6 +151,7 @@ class DuplicateDetectionService {
                 results.push({ url, error: 'No content crawled' });
                 continue;
             }
+            // Detect duplicates for the crawled content
             const { duplicates } = await this.detectDuplicatesAcrossEntries(content);
             results.push({ url, duplicates });
         }
@@ -132,4 +160,5 @@ class DuplicateDetectionService {
     }
 }
 
+// Export a new instance of the DuplicateDetectionService
 module.exports = new DuplicateDetectionService();
