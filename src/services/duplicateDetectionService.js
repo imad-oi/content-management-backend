@@ -107,13 +107,28 @@ class DuplicateDetectionService {
 
         // Then, for each paragraph, split by periods if it's a long paragraph
         paragraphs = paragraphs.flatMap(para => {
-            if (para.length > 100) { 
+            if (para.length > 100) {
                 return para.split(/\.(?=\s)/).map(sentence => sentence.trim()).filter(Boolean);
             }
             return para;
         });
 
         return paragraphs;
+    }
+
+    async compareCrawledContent(crawledContents) {
+        const results = [];
+
+        for (const { url, content } of crawledContents) {
+            if (!content) {
+                results.push({ url, error: 'No content crawled' });
+                continue;
+            }
+            const { duplicates } = await this.detectDuplicatesAcrossEntries(content);
+            results.push({ url, duplicates });
+        }
+
+        return results;
     }
 }
 
