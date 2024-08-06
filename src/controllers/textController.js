@@ -4,10 +4,13 @@ const duplicateDetectionService = require('../services/duplicateDetectionService
 exports.submitText = async (req, res) => {
   try {
     const { content } = req.body;
-    const { internalDuplicates, externalDuplicates } = await duplicateDetectionService.detectDuplicatesAcrossEntries(content);
+    const userId = req.user.id; 
+
+    const { internalDuplicates, externalDuplicates } = await duplicateDetectionService.detectDuplicatesAcrossEntries(content,userId);
     
     const textEntry = new TextEntry({ 
       content,
+      user:userId,
       duplicates: {
         internal: internalDuplicates,
         external: externalDuplicates
@@ -40,9 +43,26 @@ exports.getTextByUuid = async (req, res) => {
 
 exports.getAllTexts = async (req, res) => {
   try {
-    const textEntries = await TextEntry.find();
-    res.json(textEntries);
+    const userId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const textEntries = await TextEntry.find({ user: userId })
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });  // the newest entries first
+
+    const total = await TextEntry.countDocuments({ user: userId });
+
+    res.json({
+      textEntries,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalEntries: total
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error retrieving texts:', error);
+    res.status(500).json({ error: 'An error occurred while retrieving texts' });
   }
 };
